@@ -75,15 +75,18 @@ parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
 parser.add_argument('--gpu-id', default='0', type=str,
                     help='id(s) for CUDA_VISIBLE_DEVICES')
 
+# -----------------------------------------------------------------------------------------------------
+
 parser.set_defaults(
-    arch='resnet',
-    depth='110',
+    arch='densenet',
+    depth='100',
     epochs=164,
     schedule=[81, 122],
     gamma=0.1,
     wd=1e-4,
-    checkpoint='checkpoints/transform.more.compression.1'
+    checkpoint='work/densenet'
 )
+# -----------------------------------------------------------------------------------------------------
 
 args = parser.parse_args()
 lz.mkdir_p(args.checkpoint, delete=True)
@@ -94,7 +97,8 @@ assert args.dataset == 'cifar10' or args.dataset == 'cifar100', 'Dataset can onl
 
 # Use CUDA
 # os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
-lz.init_dev(lz.get_dev(n=1))
+# lz.init_dev(lz.get_dev(n=1))
+lz.init_dev((2,))
 use_cuda = torch.cuda.is_available()
 
 # Random seed
@@ -174,9 +178,11 @@ def main():
             depth=args.depth,
         )
     else:
+        print('use model', args.arch)
         model = models.__dict__[args.arch](num_classes=num_classes)
 
     model = torch.nn.DataParallel(model).cuda()
+    print(model)
     cudnn.benchmark = True
     print('    Total params: %.2fM' % (sum(p.numel() for p in model.parameters()) / 1000000.0))
 
@@ -194,9 +200,9 @@ def main():
     else:
         param_groups = model.parameters()
 
-    optimizer = optim.SGD(param_groups
-                          , lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
-
+    optimizer = optim.SGD(param_groups,
+                          lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+    # optimizer = optim.Adadelta(param_groups)
     # Resume
     title = 'cifar-10-' + args.arch
     if args.resume:
@@ -219,7 +225,7 @@ def main():
         test_loss, test_acc = test(testloader, model, criterion, start_epoch, use_cuda)
         print(' Test Loss:  %.8f, Test Acc:  %.2f' % (test_loss, test_acc))
         return
-
+    logger.writer.add_scalar('param-M', sum(p.numel() for p in model.parameters()) / 1000000.0, global_step=1)
     # Train and val
     for epoch in range(start_epoch, args.epochs):
         adjust_learning_rate(optimizer, epoch)
