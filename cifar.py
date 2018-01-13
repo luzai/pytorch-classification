@@ -75,18 +75,23 @@ parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
 parser.add_argument('--gpu-id', default='0', type=str,
                     help='id(s) for CUDA_VISIBLE_DEVICES')
 
-# -----------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------
 
 parser.set_defaults(
-    arch='densenet',
+    arch='dcnn',
     depth='100',
-    epochs=164,
-    schedule=[81, 122],
+    epochs=125,
+    schedule=[80, 120],
     gamma=0.1,
     wd=1e-4,
-    checkpoint='work/densenet'
+    # checkpoint='work/translate.shuangfei',
+    # checkpoint='work/translate.4.c1',
+    # checkpoint='work/rotate.5.slight.c2',
+    # checkpoint='work/rotate.8.c2',
+    checkpoint='work/fuck',
+    evaluate=False
 )
-# -----------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------
 
 args = parser.parse_args()
 lz.mkdir_p(args.checkpoint, delete=True)
@@ -97,8 +102,8 @@ assert args.dataset == 'cifar10' or args.dataset == 'cifar100', 'Dataset can onl
 
 # Use CUDA
 # os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
-# lz.init_dev(lz.get_dev(n=1))
-lz.init_dev((2,))
+lz.init_dev(lz.get_dev(n=1))
+# lz.init_dev((2,))
 use_cuda = torch.cuda.is_available()
 
 # Random seed
@@ -333,9 +338,12 @@ def test(testloader, model, criterion, epoch, use_cuda):
 
         if use_cuda:
             inputs, targets = inputs.cuda(), targets.cuda()
-        with torch.no_grad():
-            inputs, targets = torch.autograd.Variable(inputs, ), torch.autograd.Variable(targets)
-
+        try:
+            with torch.no_grad():
+                inputs, targets = torch.autograd.Variable(inputs, ), torch.autograd.Variable(targets)
+        except:
+            inputs, targets = torch.autograd.Variable(inputs, volatile=True), torch.autograd.Variable(targets,
+                                                                                                      volatile=True)
         # compute output
         outputs = model(inputs)
         loss = criterion(outputs, targets)
