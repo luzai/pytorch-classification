@@ -1,6 +1,7 @@
 # A simple torch style logger
 # (C) Wei YANG 2017
 from __future__ import absolute_import
+from lz import *
 import matplotlib.pyplot as plt
 import os
 import sys
@@ -23,7 +24,7 @@ def plot_overlap(logger, names=None):
     return [logger.title + '(' + name + ')' for name in names]
 
 
-from tensorboard import SummaryWriter
+from tensorboardX import SummaryWriter
 
 
 class Logger(object):
@@ -33,7 +34,8 @@ class Logger(object):
         self.file = None
         self.resume = resume
         self.title = '' if title == None else title
-        self.writer = SummaryWriter(os.path.dirname(fpath))
+        if not resume:
+            self.writer = SummaryWriter(os.path.dirname(fpath))
         self.iter = 1
         if fpath is not None:
             if resume:
@@ -75,6 +77,9 @@ class Logger(object):
     def append(self, numbers):
         assert len(self.names) == len(numbers), 'Numbers do not match names'
         for index, num in enumerate(numbers):
+            if math.isnan(num):
+                print(num, 'nan')
+                raise ValueError('nan')
             self.writer.add_scalar(self.clean(self.names[index]), num, global_step=self.iter)
             self.file.write("{0:.6f}".format(num))
             self.file.write('\t')
