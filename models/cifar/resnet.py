@@ -20,8 +20,8 @@ ConvOp = eval(conf['conv_op'])
 
 __all__ = ['resnet', 'res_att1']
 
-nn.Conv2d = wrapped_partial(nn.Conv2d, bias=False)
-
+nn.Conv2d =Wrap= wrapped_partial(nn.Conv2d, bias=False)
+# nn.Conv2d =Wrap= wrapped_partial(nn.Conv2d, )
 
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
@@ -337,7 +337,7 @@ class ResNet(nn.Module):
         self.fc = nn.Linear(64 * block.expansion, num_classes)
 
         for m in self.modules():
-            if isinstance(m, nn.Conv2d):  # nn.Conv2d
+            if isinstance(m, nn.Conv2d.func):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
             elif isinstance(m, nn.BatchNorm2d):
@@ -534,7 +534,7 @@ class ResAtt1(nn.Module):
     def init_model(self):
         from torch.nn import init
         for m in self.modules():
-            if isinstance(m, nn.Conv2d):
+            if isinstance(m, nn.Conv2d.func):
                 init.kaiming_normal(m.weight, mode='fan_out')
                 if m.bias is not None:
                     init.constant(m.bias, 0)

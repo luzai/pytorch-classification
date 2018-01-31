@@ -14,12 +14,12 @@ confs = [
     #     meta_stride=1,
     #     comp=1,
     # ),
-edict(
+    edict(
         arch='resnet',
         depth=56,
         epochs=164,
         wd=5e-4, weight_decay=5e-4, lr=1e-1,
-        checkpoint='work/res.56.1e-4.2',
+        checkpoint='work/res.56.1e-4',
         resume='',
         evaluate=False,
         conv_op='nn.Conv2d',
@@ -64,5 +64,5 @@ edict(
 chs = -1
 conf = confs[chs]
 mkdir_p('work')
-with open(conf.checkpoint + '.chs', 'w') as f:
-    f.write('model {} use conf chs {} \n'.format(conf.checkpoint, chs))
+# with open(conf.checkpoint + '.chs', 'w') as f:
+#     f.write('model {} use conf chs {} \n'.format(conf.checkpoint, chs))

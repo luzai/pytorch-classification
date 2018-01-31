@@ -105,73 +105,9 @@ if use_cuda:
 
 best_acc = 0  # best test accuracy
 
-'''
-from PIL import Image, ImageOps
-
-class Scale(object):
-    """Rescales the input PIL.Image to the given 'size'.
-    'size' will be the size of the smaller edge.
-    For example, if height > width, then image will be
-    rescaled to (size * height / width, size)
-    size: size of the smaller edge
-    interpolation: Default: PIL.Image.BILINEAR
-    """
-
-    def __init__(self, size, interpolation=Image.BILINEAR):
-        self.size = size
-        self.interpolation = interpolation
-
-    def __call__(self, img):
-        return img.resize(self.size, self.interpolation)
-'''
-
 from torch.optim.optimizer import Optimizer, required
 
 class SGD(Optimizer):
-    r"""Implements stochastic gradient descent (optionally with momentum).
-
-    Nesterov momentum is based on the formula from
-    `On the importance of initialization and momentum in deep learning`__.
-
-    Args:
-        params (iterable): iterable of parameters to optimize or dicts defining
-            parameter groups
-        lr (float): learning rate
-        momentum (float, optional): momentum factor (default: 0)
-        weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
-        dampening (float, optional): dampening for momentum (default: 0)
-        nesterov (bool, optional): enables Nesterov momentum (default: False)
-
-    Example:
-        >>> optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
-        >>> optimizer.zero_grad()
-        >>> loss_fn(model(input), target).backward()
-        >>> optimizer.step()
-
-    __ http://www.cs.toronto.edu/%7Ehinton/absps/momentum.pdf
-
-    .. note::
-        The implementation of SGD with Momentum/Nesterov subtly differs from
-        Sutskever et. al. and implementations in some other frameworks.
-
-        Considering the specific case of Momentum, the update can be written as
-
-        .. math::
-                  v = \rho * v + g \\
-                  p = p - lr * v
-
-        where p, g, v and :math:`\rho` denote the parameters, gradient,
-        velocity, and momentum respectively.
-
-        This is in contrast to Sutskever et. al. and
-        other frameworks which employ an update of the form
-
-        .. math::
-             v = \rho * v + lr * g \\
-             p = p - v
-
-        The Nesterov version is analogously modified.
-    """
 
     def __init__(self, params, lr=required, momentum=0, dampening=0,
                  weight_decay=0, nesterov=False):
@@ -275,7 +211,7 @@ def main():
         data_path = '/home/xinglu/.torch/data/cifar100/'
         num_classes = 100
 
-    trainset = dataloader(root=data_path, train=True, download=True, transform=transform_train)
+    trainset = dataloader(root=data_path, train=True, download=False, transform=transform_train)
     trainloader = data.DataLoader(trainset, batch_size=args.train_batch, shuffle=True, num_workers=args.workers)
 
     testset = dataloader(root=data_path, train=False, download=False, transform=transform_test)
@@ -362,12 +298,6 @@ def main():
         logger.set_names(['Learning Rate', 'Train Loss', 'Valid Loss', 'Train Acc.', 'Valid Acc.'])
 
     logger.writer.add_scalar('param-M', sum(p.numel() for p in model.parameters()) / 1000000.0, global_step=1)
-    # test_loss, test_acc, interval = test(testloader, model, criterion, start_epoch, use_cuda)
-    # logger.writer.add_scalar('forward-s', interval, global_step=1)
-
-    # print(
-    #     'Total params: %.2fM  Forward time %.4f s' % (sum(p.numel() for p in model.parameters()) / 1000000.0, interval))
-    # print('Test Loss:  %.8f, Test Acc:  %.4f,' % (test_loss, test_acc))
 
     def cnt_param(weight):
         return weight.numel()
