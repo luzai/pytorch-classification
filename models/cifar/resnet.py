@@ -13,6 +13,8 @@ import math
 
 __all__ = ['resnet', 'res_att1']
 
+nn.Conv2d = wrapped_partial(nn.Conv2d, bias=False)
+
 
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
@@ -119,7 +121,7 @@ class ResNet(nn.Module):
         self.fc = nn.Linear(64 * block.expansion, num_classes)
 
         for m in self.modules():
-            if isinstance(m, nn.Conv2d):
+            if isinstance(m, nn.Conv2d.func):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
             elif isinstance(m, nn.BatchNorm2d):
@@ -189,17 +191,19 @@ class Residual(nn.Module):
             self.conv4 = None
 
     def forward(self, x):
-
-        residual = x
-        x = F.relu(self.bn1(x))
-        x = self.conv1(x)
-        x = F.relu(self.bn2(x))
-        x = self.conv2(x)
-        x = F.relu(self.bn3(x))
-        x = self.conv3(x)
-
+        # todo
         if self.conv4 is not None:
+            residual =x
             residual = self.conv4(residual)
+        else:
+            residual = x
+            x = F.relu(self.bn1(x))
+            x = self.conv1(x)
+            x = F.relu(self.bn2(x))
+            x = self.conv2(x)
+            x = F.relu(self.bn3(x))
+            x = self.conv3(x)
+
 
         return x + residual
 
@@ -209,7 +213,9 @@ class Attention(nn.Module):
         super(Attention, self).__init__()
         self.residual1 = Residual(in_channels, in_channels)
         self.unet = nn.Sequential(Unet(in_channels, rep=unet_rep),
+                                  nn.BatchNorm2d(in_channels), nn.ReLU(),
                                   nn.Conv2d(in_channels, in_channels, 1),
+                                  nn.BatchNorm2d(in_channels), nn.ReLU(),
                                   nn.Conv2d(in_channels, in_channels, 1),
                                   nn.Sigmoid()
                                   )
@@ -261,12 +267,13 @@ class ResAtt1(nn.Module):
             Residual(128, 128),
         )
         self.fc1 = nn.Linear(128, 10)
+        self.bn1 = nn.BatchNorm1d(128)
         self.init_model()
 
     def init_model(self):
         from torch.nn import init
         for m in self.modules():
-            if isinstance(m, nn.Conv2d):
+            if isinstance(m, nn.Conv2d.func):
                 init.kaiming_normal(m.weight, mode='fan_out')
                 if m.bias is not None:
                     init.constant(m.bias, 0)
@@ -289,6 +296,8 @@ class ResAtt1(nn.Module):
         x = self.residual4(x)
         x = F.avg_pool2d(x, x.size()[-2:])
         x = x.view(x.size(0), -1)
+        x = self.bn1(x)
+        x=F.relu(x)
         x = self.fc1(x)
         return x
 

@@ -79,6 +79,7 @@ parser.add_argument('--gpu-id', default='0', type=str,
                     help='id(s) for CUDA_VISIBLE_DEVICES')
 
 from conf import conf
+
 init_dev(get_dev(n=1))
 
 parser.set_defaults(**conf)
@@ -102,7 +103,7 @@ if use_cuda:
 
 best_acc = 0  # best test accuracy
 
-mkdir_p(args.checkpoint)
+mkdir_p(args.checkpoint, delete=True)
 from tensorboardX import SummaryWriter
 
 writer = SummaryWriter(args.checkpoint)
@@ -203,13 +204,15 @@ def main():
         print(' Test Loss:  %.8f, Test Acc:  %.2f' % (test_loss, test_acc))
         return
     warmup = True if args.arch == 'res_att1' else False
+    warmup = False
     if warmup:
-        adjust_learning_rate2(optimizer, 1e-3)
-        for epoch in range(10):
+        adjust_learning_rate2(optimizer, 1e-2)
+        for epoch in range(145):
             train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch, use_cuda)
             print('warmup', epoch, train_loss, train_acc)
             test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda)
             print('warmpup ', epoch, test_loss, test_acc)
+        adjust_learning_rate2(optimizer, 1e-1)
     # Train and val
     for epoch in range(start_epoch, args.epochs):
         adjust_learning_rate(optimizer, epoch)
