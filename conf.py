@@ -45,7 +45,7 @@ conf = edict(
     depth=56,
     epochs=164,
     wd=1e-4, weight_decay=1e-4, lr=1e-1,
-    checkpoint='work/res.att.221.deeper',
+    checkpoint='work/res.att.64',
     resume='',
     evaluate=False,
 )

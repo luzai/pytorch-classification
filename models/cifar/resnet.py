@@ -191,10 +191,17 @@ class Residual(nn.Module):
             self.conv4 = None
 
     def forward(self, x):
-        # todo
         if self.conv4 is not None:
-            residual =x
+            x = F.relu(self.bn1(x))
+            residual = x
             residual = self.conv4(residual)
+
+            x = self.conv1(x)
+            x = F.relu(self.bn2(x))
+            x = self.conv2(x)
+            x = F.relu(self.bn3(x))
+            x = self.conv3(x)
+
         else:
             residual = x
             x = F.relu(self.bn1(x))
@@ -203,7 +210,6 @@ class Residual(nn.Module):
             x = self.conv2(x)
             x = F.relu(self.bn3(x))
             x = self.conv3(x)
-
 
         return x + residual
 
@@ -237,14 +243,15 @@ class ResAtt1(nn.Module):
 
         self.conv1 = nn.Conv2d(3, 16,
                                kernel_size=3, stride=1, padding=1)
-
+        # 16 32 64 128
+        '''
         self.residual1 = nn.Sequential(
             Residual(16, 32),
         )
 
         self.attention1 = nn.Sequential(
             Attention(32, 32, unet_rep=2),
-            Attention(32, 32, unet_rep=2),
+            # Attention(32, 32, unet_rep=2),
         )
 
         self.residual2 = nn.Sequential(
@@ -252,14 +259,14 @@ class ResAtt1(nn.Module):
         )
         self.attention2 = nn.Sequential(
             Attention(64, 64, unet_rep=2),
-            Attention(64, 64, unet_rep=2),
+            # Attention(64, 64, unet_rep=2),
         )
         self.residual3 = nn.Sequential(
             Residual(64, 128, downsample=True),
         )
         self.attention3 = nn.Sequential(
             Attention(128, 128, unet_rep=1),
-            Attention(128, 128, unet_rep=1),
+            # Attention(128, 128, unet_rep=1),
         )
         self.residual4 = nn.Sequential(
             Residual(128, 128, downsample=True),
@@ -268,6 +275,22 @@ class ResAtt1(nn.Module):
         )
         self.fc1 = nn.Linear(128, 10)
         self.bn1 = nn.BatchNorm1d(128)
+        '''
+
+        # 16 32 64
+        self.attention1 = Attention(16, 16, unet_rep=2)
+        self.residual1 = Residual(16, 16)
+        self.attention2 = Attention(16, 16, unet_rep=2)
+        self.residual2 = Residual(16, 32, downsample=True)
+        self.attention3 = Attention(32, 32)
+        self.residual3 = nn.Sequential(
+            Residual(32, 64, downsample=True),
+            Residual(64, 64),
+            Residual(64, 64),
+        )
+        self.bn1 = nn.BatchNorm1d(64)
+        self.fc1 = nn.Linear(64, 10)
+
         self.init_model()
 
     def init_model(self):
@@ -287,17 +310,21 @@ class ResAtt1(nn.Module):
 
     def forward(self, x):
         x = self.conv1(x)
-        x = self.residual1(x)
+
         x = self.attention1(x)
-        x = self.residual2(x)
+        x = self.residual1(x)
+
         x = self.attention2(x)
-        x = self.residual3(x)
+        x = self.residual2(x)
+
         x = self.attention3(x)
-        x = self.residual4(x)
+        x = self.residual3(x)
+
         x = F.avg_pool2d(x, x.size()[-2:])
         x = x.view(x.size(0), -1)
+
         x = self.bn1(x)
-        x=F.relu(x)
+        x = F.relu(x)
         x = self.fc1(x)
         return x
 

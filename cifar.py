@@ -211,7 +211,7 @@ def main():
             train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch, use_cuda)
             print('warmup', epoch, train_loss, train_acc)
             test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda)
-            print('warmpup ', epoch, test_loss, test_acc)
+            print('warmup ', epoch, test_loss, test_acc)
         adjust_learning_rate2(optimizer, 1e-1)
     # Train and val
     for epoch in range(start_epoch, args.epochs):
