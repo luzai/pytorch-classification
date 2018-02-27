@@ -203,16 +203,16 @@ def main():
         test_loss, test_acc = test(testloader, model, criterion, start_epoch, use_cuda)
         print(' Test Loss:  %.8f, Test Acc:  %.2f' % (test_loss, test_acc))
         return
-    warmup = True if args.arch == 'res_att1' else False
-    warmup = False
-    if warmup:
-        adjust_learning_rate2(optimizer, 1e-2)
-        for epoch in range(145):
-            train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch, use_cuda)
-            print('warmup', epoch, train_loss, train_acc)
-            test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda)
-            print('warmup ', epoch, test_loss, test_acc)
-        adjust_learning_rate2(optimizer, 1e-1)
+    # warmup = True if args.arch == 'res_att1' else False
+    # warmup = False
+    # if warmup:
+    #     adjust_learning_rate2(optimizer, 1e-2)
+    #     for epoch in range(145):
+    #         train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch, use_cuda)
+    #         print('warmup', epoch, train_loss, train_acc)
+    #         test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda)
+    #         print('warmup ', epoch, test_loss, test_acc)
+    #     adjust_learning_rate2(optimizer, 1e-1)
     # Train and val
     for epoch in range(start_epoch, args.epochs):
         adjust_learning_rate(optimizer, epoch)
@@ -227,7 +227,13 @@ def main():
         writer.add_scalar('test/acc', test_acc, epoch)
         # append logger file
         logger.append([state['lr'], train_loss, test_loss, train_acc, test_acc])
-
+        ttl = 0
+        for n, p in (model.named_parameters()):
+            # if 'bn' in n or 'bias' in n: continue
+            ttl += torch.sum(p ** 2) / 2
+        ttl *= args.weight_decay
+        ttl = to_numpy(ttl)
+        writer.add_scalar('l2_loss', ttl, epoch)
         # save model
         is_best = test_acc > best_acc
         best_acc = max(test_acc, best_acc)
