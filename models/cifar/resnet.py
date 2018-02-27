@@ -87,7 +87,10 @@ class BasicBlock2(nn.Module):
         self.stride = stride
 
     def forward(self, x):
-        residual, transient = x
+        if isinstance(tuple,x):
+            residual, transient = x
+        else:
+            residual, transient = [x[:, :x.size(1) // 2, :, :].contiguous(), x[:, x.size(1) // 2:, :, :].contiguous()]
         func = lambda ind, x: self.bn[ind](self.conv[ind](x))
         out = [func(ind, residual) for ind in range(2)] + \
               [func(ind, transient) for ind in range(2, 4)]
@@ -106,8 +109,8 @@ class BasicBlock2(nn.Module):
                                out[1] + out[3])
         residual, transient = map(self.relu, (residual, transient))
 
-        return (residual, transient)
-
+        # return (residual, transient)
+        return torch.cat((residual, transient) ,dim=1).contiguous()
 
 # sum bn relu
 class BasicBlock3(nn.Module):

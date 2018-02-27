@@ -4,11 +4,15 @@ Copyright (c) Wei YANG, 2017
 '''
 from __future__ import print_function
 
+import sys
+
+sys.path.insert(0, '/home/xinglu/prj/luzai-tool')
+from lz import *
 import argparse
 import os
 import shutil
 import time
-import random,lz
+import random, lz
 
 import torch
 import torch.nn as nn
@@ -21,7 +25,8 @@ import torchvision.datasets as datasets
 import torchvision.models as models
 import models.imagenet as customized_models
 
-from utils import Bar, Logger, AverageMeter, accuracy, mkdir_p, savefig
+from utils import Bar, Logger, AverageMeter, accuracy, savefig
+from lz import mkdir_p
 
 # Models
 default_model_names = sorted(name for name in models.__dict__
@@ -42,7 +47,7 @@ model_names = default_model_names + customized_models_names
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 
 # Datasets
-parser.add_argument('-d', '--data', default='/data1/share/ILSVRC2012_imgdataset/', type=str)
+parser.add_argument('-d', '--data', default='/share/ILSVRC2012_imgdataset/', type=str)
 parser.add_argument('-j', '--workers', default=4 * 4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
 # Optimization options
@@ -90,20 +95,12 @@ parser.add_argument('--pretrained', dest='pretrained', action='store_true', defa
 parser.add_argument('--gpu-id', default='0,1,2,3', type=str,
                     help='id(s) for CUDA_VISIBLE_DEVICES')
 
-parser.set_defaults(gpu_id="0,1,2,3",
-                    arch="resnet50",
-                    epoch=90,
-                    checkpoint="work.imgnet/base.2/",
-                    # schedule=[150,225],
-                    schedule=[50, 85],
-                    resume='work.imgnet/base/',
-                    depth=50,
-                    train_batch=64 * 4,
-                    test_batch=32 * 4
-                    )
+from conf import conf
+
+parser.set_defaults(**conf)
 
 args = parser.parse_args()
-lz.mkdir_p(args.checkpoint,delete=True)
+lz.mkdir_p(args.checkpoint, delete=False)
 state = {k: v for k, v in args._get_kwargs()}
 
 # Use CUDA
@@ -119,9 +116,7 @@ if use_cuda:
     torch.cuda.manual_seed_all(args.manualSeed)
 
 best_acc = 0  # best test accuracy
-
-from torchvision.datasets.folder import *
-import lz
+from torchvision.datasets.folder import default_loader, find_classes, make_dataset, IMG_EXTENSIONS
 
 
 class ImageFolder(data.Dataset):
@@ -131,9 +126,10 @@ class ImageFolder(data.Dataset):
         classes, class_to_idx = find_classes(root)
         imgs = make_dataset(root, class_to_idx)
         if len(imgs) == 0:
-            raise (RuntimeError("Found 0 images in subfolders of: " + root + "\n"
-                                                                             "Supported image extensions are: " + ",".join(
+            raise (RuntimeError("Found 0 images in subfolders of: " + root +
+                                "\nSupported image extensions are: " + ",".join(
                 IMG_EXTENSIONS)))
+
         self.root = root
         self.imgs = imgs
         self.classes = classes
@@ -175,8 +171,8 @@ def main():
         mkdir_p(args.checkpoint)
 
     # Data loading code
-    traindir = os.path.join('/home/xinglu/share/ILSVRC2012_imgdataset', 'train')
-    valdir = os.path.join('/home/xinglu/share/ILSVRC2012_imgdataset', 'val')
+    traindir = os.path.join(args.data, 'train')
+    valdir = os.path.join(args.data, 'val')
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
 
@@ -356,8 +352,7 @@ def test(val_loader, model, criterion, epoch, use_cuda):
 
         if use_cuda:
             inputs, targets = inputs.cuda(), targets.cuda()
-        with torch.no_grad():
-            inputs, targets = torch.autograd.Variable(inputs, volatile=True), torch.autograd.Variable(targets)
+        inputs, targets = torch.autograd.Variable(inputs, volatile=True), torch.autograd.Variable(targets)
 
         # compute output
         outputs = model(inputs)
