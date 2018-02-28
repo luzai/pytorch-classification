@@ -1,18 +1,35 @@
 from lz import *
 
+ngpu = 4
+
 confs = [
+    # edict(
+    #     arch='se_resnet50',
+    #     depth=50,
+    #     schedule=[31, 61],
+    #     gamma=0.1,
+    #     data='/share/ILSVRC2012_imgdataset/',
+    #     worker=32, epochs=90, train_batch=64*ngpu, test_batch=50*ngpu,
+    #     checkpoint='work/se_res.cont',
+    #     resume='work/se_res/checkpoint.pth.tar',
+    #     # resume='work/se_res/model_best.pth.tar',
+    #     evaluate=False,
+    #     gpu_id='2,3'
+    # )
+
     edict(
-        arch='se_resnet50',
+        arch='serir_resnet50',
         depth=50,
         schedule=[31, 61],
         gamma=0.1,
         data='/share/ILSVRC2012_imgdataset/',
-        worker=32, epochs=90, train_batch=128, test_batch=100,
-        checkpoint='work/se_res.cont',
-        resume='work/se_res/checkpoint.pth.tar',
+        worker=32, epochs=90, train_batch=64*ngpu, test_batch=50*ngpu,
+        checkpoint='work/serir_res.cont',
+        resume='work/serir_res/checkpoint.pth.8',
         evaluate=False,
         gpu_id='2,3'
     )
+
     # edict(
     #     arch='resnet',
     #     depth=56,

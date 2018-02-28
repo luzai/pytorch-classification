@@ -1,7 +1,7 @@
+from lz import *
 import math
-
 import torch.nn as nn
-from torchvision.models import ResNet
+from torchvision.models.resnet import ResNet, model_zoo, model_urls
 from .se_module import SELayer
 
 
@@ -113,6 +113,8 @@ def se_resnet50(num_classes=1000, **kwargs):
     """
     model = ResNet(SEBottleneck, [3, 4, 6, 3], num_classes=num_classes)
     model.avgpool = nn.AdaptiveAvgPool2d(1)
+    logging.info('load resnet')
+    load_state_dict(model, model_zoo.load_url(model_urls['resnet{}'.format(50)]))
     return model
 
 

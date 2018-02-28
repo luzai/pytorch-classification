@@ -214,7 +214,7 @@ def main():
         model.cuda()
     else:
         model = torch.nn.DataParallel(model).cuda()
-
+    print(model)
     cudnn.benchmark = True
     print('    Total params: %.2fM' % (sum(p.numel() for p in model.parameters()) / 1000000.0))
 
@@ -276,6 +276,10 @@ def main():
     print(best_acc)
 
 
+# dbg=True
+dbg = False
+
+
 def train(train_loader, model, criterion, optimizer, epoch, use_cuda):
     # switch to train mode
     model.train()
@@ -328,6 +332,8 @@ def train(train_loader, model, criterion, optimizer, epoch, use_cuda):
             top5=top5.avg,
         )
         bar.next()
+        if dbg:
+            break
     bar.finish()
     return (losses.avg, top1.avg)
 
@@ -369,23 +375,31 @@ def test(val_loader, model, criterion, epoch, use_cuda):
         end = time.time()
 
         # plot progress
-        bar.suffix = '({batch}/{size}) Data: {data:.3f}s | Batch: {bt:.3f}s | Total: {total:} | ETA: {eta:} | Loss: {loss:.4f} | top1: {top1: .4f} | top5: {top5: .4f}'.format(
+        bar.suffix = '({batch}/{size}) ' \
+                     'Data: {data:.1f}s | ' \
+                     'Batch: {bt:.1f}s | ' \
+                     'Loss: {loss:.2f} | ' \
+                     'top1: {top1: .2f}'.format(
             batch=batch_idx + 1,
             size=len(val_loader),
             data=data_time.avg,
             bt=batch_time.avg,
-            total=bar.elapsed_td,
-            eta=bar.eta_td,
+            # total=bar.elapsed_td,
+            # eta=bar.eta_td,
             loss=losses.avg,
             top1=top1.avg,
-            top5=top5.avg,
+            # top5=top5.avg,
         )
         bar.next()
+        if dbg:
+            break
     bar.finish()
     return (losses.avg, top1.avg)
 
 
 def save_checkpoint(state, is_best, checkpoint='checkpoint', filename='checkpoint.pth.tar'):
+    epoch = state.get('epoch', 0)
+    filename = f'checkpoint.pth.{epoch}'
     filepath = os.path.join(checkpoint, filename)
     torch.save(state, filepath)
     if is_best:

@@ -34,8 +34,8 @@ class Logger(object):
         self.file = None
         self.resume = resume
         self.title = '' if title == None else title
-        if not resume:
-            self.writer = SummaryWriter(os.path.dirname(fpath))
+        # if not resume:
+        self.writer = SummaryWriter(os.path.dirname(fpath))
         self.iter = 1
         if fpath is not None:
             if resume:
